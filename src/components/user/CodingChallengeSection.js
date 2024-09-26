@@ -89,9 +89,9 @@ const CodingChallengeSection = ({ hackathonId, challenges, onAllChallengesComple
           input: testCase.input,
           expectedOutput: testCase.expectedOutput,
           actualOutput: response.data.stdout,
-          passed: response.data.stdout.trim() === testCase.expectedOutput.trim(),
-          time: response.data.time, // Add time
-          memory: response.data.memory, // Add memory
+          passed: response.data.stdout.trim() === testCase.expectedOutput.trim(), // Ensure both are trimmed
+          time: response.data.time,
+          memory: response.data.memory,
           status: 'completed'
         };
         newTestResults.push(result);
@@ -155,7 +155,6 @@ const CodingChallengeSection = ({ hackathonId, challenges, onAllChallengesComple
       });
 
       if (allTestsPassed) {
-        toast.success('All test cases passed. Submission successful!');
         if (currentChallenge === challenges.length - 1) {
           onAllChallengesCompleted(true);
         } else {
