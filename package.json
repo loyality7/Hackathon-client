@@ -60,6 +60,6 @@
   "resolutions": {
     "@tensorflow/tfjs-core": "^3.21.0",
     "@tensorflow/tfjs-converter": "^3.21.0"
-  }
-   "proxy": "https://api-hackathon.hysterchat.com"
+  },
+  "proxy": "https://api-hackathon.hysterchat.com"
 }
