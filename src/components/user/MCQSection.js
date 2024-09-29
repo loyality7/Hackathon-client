@@ -6,9 +6,24 @@ import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
 const MCQSection = ({ hackathonId, mcqs }) => {
+  const [shuffledMcqs, setShuffledMcqs] = useState([]);
   const [currentMcq, setCurrentMcq] = useState(0);
   const [selectedAnswers, setSelectedAnswers] = useState({});
   const { token } = useContext(AuthContext);
+
+  useEffect(() => {
+    // Fisher-Yates shuffle algorithm
+    const shuffleArray = (array) => {
+      for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+      }
+      return array;
+    };
+
+    // Shuffle the mcqs when the component mounts
+    setShuffledMcqs(shuffleArray([...mcqs]));
+  }, [mcqs]);
 
   useEffect(() => {
     console.log('Current token:', token);
@@ -22,7 +37,7 @@ const MCQSection = ({ hackathonId, mcqs }) => {
   };
 
   const handleNext = () => {
-    if (currentMcq < mcqs.length - 1) {
+    if (currentMcq < shuffledMcqs.length - 1) {
       setCurrentMcq(currentMcq + 1);
     }
   };
@@ -34,7 +49,7 @@ const MCQSection = ({ hackathonId, mcqs }) => {
   };
 
   const handleSkip = () => {
-    if (currentMcq < mcqs.length - 1) {
+    if (currentMcq < shuffledMcqs.length - 1) {
       setCurrentMcq(currentMcq + 1);
       const updatedAnswers = { ...selectedAnswers };
       delete updatedAnswers[currentMcq];
@@ -49,7 +64,7 @@ const MCQSection = ({ hackathonId, mcqs }) => {
       console.log('Hackathon ID:', hackathonId);
       const response = await axios.post(`/api/users/hackathons/${hackathonId}/submit-mcq`, {
         answers: selectedAnswers,
-        mcqs: mcqs
+        mcqs: shuffledMcqs
       }, {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -68,14 +83,14 @@ const MCQSection = ({ hackathonId, mcqs }) => {
     }
   };
 
-  if (mcqs.length === 0) return <Typography>No MCQs available for this hackathon.</Typography>;
+  if (shuffledMcqs.length === 0) return <Typography>No MCQs available for this hackathon.</Typography>;
 
-  const currentQuestion = mcqs[currentMcq];
+  const currentQuestion = shuffledMcqs[currentMcq];
 
   return (
     <Paper elevation={3} sx={{ p: 4, borderRadius: 2, maxWidth: 600, mx: 'auto' }}>
       <Typography variant="subtitle1" gutterBottom style={{ color: 'black', fontWeight: 'bold' }}>
-        {currentMcq + 1} / {mcqs.length}
+        {currentMcq + 1} / {shuffledMcqs.length}
       </Typography>
       <Typography variant="h5" gutterBottom fontWeight="bold" color="primary">
         MCQ Challenge
@@ -83,7 +98,7 @@ const MCQSection = ({ hackathonId, mcqs }) => {
 
       <LinearProgress
         variant="determinate"
-        value={(currentMcq + 1) / mcqs.length * 100}
+        value={(currentMcq + 1) / shuffledMcqs.length * 100}
         sx={{ mb: 3, height: 8, borderRadius: 4 }}
       />
 
@@ -115,7 +130,7 @@ const MCQSection = ({ hackathonId, mcqs }) => {
         >
           Previous
         </Button>
-        {currentMcq === mcqs.length - 1 ? (
+        {currentMcq === shuffledMcqs.length - 1 ? (
           <Button
             onClick={handleSubmit}
             variant="contained"
