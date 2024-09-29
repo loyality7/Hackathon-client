@@ -16,6 +16,7 @@ import Header from '../../pages/Header';
 import Footer from '../../pages/Footer';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import { useTheme } from '@mui/material/styles';
+import { addDays, isAfter } from 'date-fns';
 
 // Styled components
 const GradientBox = styled(Box)(({ theme }) => ({
@@ -112,21 +113,34 @@ const HackathonChallenge = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const isTablet = useMediaQuery(theme.breakpoints.between('sm', 'md'));
+  const [userStartDate, setUserStartDate] = useState(null);
+  const [userProgress, setUserProgress] = useState(null);
+  const [completedSteps, setCompletedSteps] = useState([]);
 
   useEffect(() => {
     const fetchHackathonAndCheckRegistration = async () => {
       try {
-        const [hackathonResponse, registrationResponse] = await Promise.all([
+        const [hackathonResponse, registrationResponse, progressResponse] = await Promise.all([
           axios.get(`/api/hackathons/${id}`),
           axios.get(`/api/hackathons/${id}/registration-status`, {
+            headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+          }),
+          axios.get(`/api/hackathons/${id}/progress`, {
             headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
           })
         ]);
 
         setHackathon(hackathonResponse.data);
         setIsRegistered(registrationResponse.data.isRegistered);
+        if (registrationResponse.data.startDate) {
+          setUserStartDate(new Date(registrationResponse.data.startDate));
+        }
+        setUserProgress(progressResponse.data);
+        // Update this line to set the correct active step based on user progress
+        setActiveStep(progressResponse.data.currentStep || 0);
+        setCompletedSteps(progressResponse.data.completedSteps || []);
       } catch (error) {
-        console.error('Error fetching hackathon or registration status:', error);
+        console.error('Error fetching hackathon data:', error);
       } finally {
         setLoading(false);
       }
@@ -134,6 +148,12 @@ const HackathonChallenge = () => {
 
     fetchHackathonAndCheckRegistration();
   }, [id]);
+
+  const isHackathonExpired = () => {
+    if (!userStartDate) return false;
+    const userEndDate = addDays(userStartDate, 7);
+    return isAfter(new Date(), userEndDate);
+  };
 
   const handleRegistration = async (registrationData) => {
     try {
@@ -212,7 +232,15 @@ const HackathonChallenge = () => {
       case 1:
         return (
           <Box sx={{ height: 'calc(100vh - 200px)' }}>
-            <MCQSection hackathonId={hackathon._id} mcqs={hackathon.mcqs} />
+            {completedSteps.includes(1) ? (
+              <Typography>You have already completed the MCQ section. Please proceed to the next step.</Typography>
+            ) : (
+              <MCQSection 
+                hackathonId={hackathon._id} 
+                mcqs={hackathon.mcqs} 
+                onComplete={() => updateUserProgress(activeStep, 1)}
+              />
+            )}
           </Box>
         );
       case 2:
@@ -241,8 +269,9 @@ const HackathonChallenge = () => {
   };
 
   const handleNext = () => {
-    
-    setActiveStep((prevActiveStep) => prevActiveStep + 1);
+    const nextStep = activeStep + 1;
+    setActiveStep(nextStep);
+    updateUserProgress(nextStep, activeStep);
   };
 
   const handleBack = () => {
@@ -254,9 +283,29 @@ const HackathonChallenge = () => {
     setCodingChallengesCompleted(completed);
   };
 
+  const updateUserProgress = async (newStep, completedStep) => {
+    try {
+      const updatedCompletedSteps = [...completedSteps];
+      if (completedStep && !updatedCompletedSteps.includes(completedStep)) {
+        updatedCompletedSteps.push(completedStep);
+      }
+      const response = await axios.post(`/api/hackathons/${id}/progress`, 
+        { currentStep: newStep, completedSteps: updatedCompletedSteps },
+        { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } }
+      );
+      setUserProgress(response.data);
+      setCompletedSteps(response.data.completedSteps);
+    } catch (error) {
+      console.error('Error updating user progress:', error);
+    }
+  };
+
   if (loading) return <LinearProgress />;
 
-  if (!isRegistered) {
+  // Add this check
+  if (!hackathon) return <Typography>Loading hackathon details...</Typography>;
+
+  if (!isRegistered || isHackathonExpired()) {
     return (
       <>
       <Header />
@@ -267,8 +316,6 @@ const HackathonChallenge = () => {
       </>
     );
   }
-
-  if (!hackathon) return <LinearProgress />;
 
   return (
     <Box sx={{ 
@@ -334,7 +381,7 @@ const HackathonChallenge = () => {
           disabled={activeStep === steps.length - 1 || (activeStep === 2 && !codingChallengesCompleted)}
           fullWidth={isMobile}
         >
-          {activeStep === steps.length - 2 ? 'Next' : 'Next'}
+          {activeStep === steps.length - 1 ? 'Finish' : 'Next'}
         </StyledButton>
       </Box>
     </Box>
