@@ -120,7 +120,7 @@ const HackathonRegistrationForm = ({ hackathon, onRegister }) => {
       if (response.data.success) {
         setIsRegistered(true);
         onRegister(response.data);
-        navigate(`/hackathon/${hackathon._id}`);
+        navigate(`/hackathons`);
       } else {
         console.error('Registration failed:', response.data.message);
       }
@@ -298,7 +298,7 @@ const HackathonRegistrationForm = ({ hackathon, onRegister }) => {
       return (
         <Paper elevation={3} sx={{ p: 4, maxWidth: 800, mx: 'auto' }}>
           <Typography variant="h5" gutterBottom align="center">
-            You are already registered for this hackathon!
+            You are registered for this hackathon!
           </Typography>
         </Paper>
       );
