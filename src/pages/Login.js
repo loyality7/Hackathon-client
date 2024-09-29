@@ -74,7 +74,7 @@ const Login = () => {
   };
 
   const handleRedirect = () => {
-    window.location.href = 'https://nexterchat.com/hackathon/login';
+    window.location.href = 'https://nexterchat.com/hackathon';
   };
 
   // Define keyframes for animations
