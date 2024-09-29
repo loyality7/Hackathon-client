@@ -74,7 +74,7 @@ const Login = () => {
   };
 
   const handleRedirect = () => {
-    window.location.href = 'https://hysteresis.gokulkumar.com/dani-sample-button/';
+    window.location.href = 'https://nexterchat.com/hackathon/login';
   };
 
   // Define keyframes for animations
