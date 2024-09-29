@@ -8,7 +8,7 @@ import GroupIcon from '@mui/icons-material/Group';
 import CodeIcon from '@mui/icons-material/Code';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
- 
+import { addDays, isAfter } from 'date-fns';
 
 const DarkContainer = styled(Container)(({ theme }) => ({
   backgroundColor: '#121212',
@@ -81,6 +81,7 @@ const HackathonRegistrationForm = ({ hackathon, onRegister }) => {
   const navigate = useNavigate();
   const [showForm, setShowForm] = useState(false);
   const [isRegistered, setIsRegistered] = useState(false);
+  const [userStartDate, setUserStartDate] = useState(null);
   const [formData, setFormData] = useState({
     fullName: '',
     gender: '',
@@ -102,6 +103,9 @@ const HackathonRegistrationForm = ({ hackathon, onRegister }) => {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
       });
       setIsRegistered(response.data.isRegistered);
+      if (response.data.startDate) {
+        setUserStartDate(new Date(response.data.startDate));
+      }
     } catch (error) {
       console.error('Error checking registration status:', error);
     }
@@ -114,11 +118,17 @@ const HackathonRegistrationForm = ({ hackathon, onRegister }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const response = await axios.post(`/api/hackathons/${hackathon._id}/register`, formData, {
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-      });
+      const startDate = new Date();
+      const endDate = addDays(startDate, 7);
+      const response = await axios.post(`/api/hackathons/${hackathon._id}/register`, 
+        { ...formData, startDate, endDate },
+        {
+          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+        }
+      );
       if (response.data.success) {
         setIsRegistered(true);
+        setUserStartDate(startDate);
         onRegister(response.data);
         navigate(`/hackathons`);
       } else {
@@ -295,13 +305,38 @@ const HackathonRegistrationForm = ({ hackathon, onRegister }) => {
 
   const renderContent = () => {
     if (isRegistered) {
-      return (
-        <Paper elevation={3} sx={{ p: 4, maxWidth: 800, mx: 'auto' }}>
-          <Typography variant="h5" gutterBottom align="center">
-            You are registered for this hackathon!
-          </Typography>
-        </Paper>
-      );
+      const userEndDate = userStartDate ? addDays(userStartDate, 7) : null;
+      const isExpired = userEndDate && isAfter(new Date(), userEndDate);
+
+      if (isExpired) {
+        return (
+          <Paper elevation={3} sx={{ p: 4, maxWidth: 800, mx: 'auto' }}>
+            <Typography variant="h5" gutterBottom align="center">
+              Your hackathon period has expired. Please register again to continue.
+            </Typography>
+            <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
+              <Button
+                variant="contained"
+                color="primary"
+                onClick={() => setShowForm(true)}
+              >
+                Register Again
+              </Button>
+            </Box>
+          </Paper>
+        );
+      } else {
+        return (
+          <Paper elevation={3} sx={{ p: 4, maxWidth: 800, mx: 'auto' }}>
+            <Typography variant="h5" gutterBottom align="center">
+              You are registered for this hackathon!
+            </Typography>
+            <Typography variant="body1" align="center">
+              Your hackathon ends on: {userEndDate?.toLocaleDateString()}
+            </Typography>
+          </Paper>
+        );
+      }
     } else if (showForm) {
       return renderRegistrationForm();
     } else {
