@@ -135,7 +135,7 @@ const CodingChallengeSection = ({ hackathonId, challenges, onAllChallengesComple
         await new Promise(resolve => setTimeout(resolve, 100));
       }
 
-      // Check if all test cases passed
+      // Check if all test cases passed (but we'll submit regardless)
       const allTestsPassed = testResults.every(result => result.passed);
 
       console.log('Submitting for hackathon:', hackathonId);
@@ -154,16 +154,21 @@ const CodingChallengeSection = ({ hackathonId, challenges, onAllChallengesComple
         }
       });
 
-      if (allTestsPassed) {
-        toast.success('All test cases passed. Submission successful!');
-        if (currentChallenge === challenges.length - 1) {
-          onAllChallengesCompleted(true);
-        } else {
-          setCurrentChallenge(prevChallenge => prevChallenge + 1);
-        }
+      // Always show a success message for submission
+      toast.success('Submission successful!');
+
+      // Move to the next challenge or complete all challenges
+      if (currentChallenge === challenges.length - 1) {
+        onAllChallengesCompleted(true);
       } else {
-        toast.warn('Not all test cases passed. Please review your code and try again.');
+        setCurrentChallenge(prevChallenge => prevChallenge + 1);
       }
+
+      // Optionally, you can still inform the user about the test results
+      if (!allTestsPassed) {
+        toast.info('Note: Not all test cases passed. Your submission has been recorded.');
+      }
+
     } catch (error) {
       console.error('Error submitting coding challenge:', error.response?.data || error.message);
       toast.error('Error submitting coding challenge: ' + (error.response?.data?.message || error.message));
