@@ -170,7 +170,7 @@ const Banner = () => {
             </Box>
             <Box sx={{ mt: { xs: 1, sm: 2 } }}>
               <AnimatedShinyButton
-                startIcon={<img src="https://hysterchat-media.s3.amazonaws.com/hysterchat-media/uploads/2023/04/19125920/cropped-hysterchat-logo.png" alt="Hysterchat" style={{ width: '24px', height: '24px', marginRight: '6px' }} />}
+                startIcon={<img src="https://res.cloudinary.com/dfdtxogcl/images/c_scale,w_248,h_180,dpr_1.25/f_auto,q_auto/v1706606519/Picture1_215dc6b/Picture1_215dc6b.png" alt="Hysterchat" style={{ width: '24px', height: '24px', marginRight: '6px' }} />}
                 href="https://nexterchat.com"
                 target="_blank"
                 rel="noopener noreferrer"
