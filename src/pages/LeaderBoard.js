@@ -4,40 +4,57 @@ import Header from './Header';
 import Footer from './Footer';
 
 const LeaderBoard = () => { 
-  const [submissions, setSubmissions] = useState([]);
+  const [hackathons, setHackathons] = useState([]);
+  const [selectedHackathon, setSelectedHackathon] = useState('');
+  const [leaderboard, setLeaderboard] = useState([]);
   const [currentUser, setCurrentUser] = useState({});
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const { token } = useContext(AuthContext);
 
   useEffect(() => {
-    const fetchAllSubmissions = async () => {
+    const fetchHackathons = async () => {
       try {
-        const hackathonsResponse = await fetch('/api/hackathons', {
+        const response = await fetch('/api/hackathons', {
           headers: {
             'Authorization': `Bearer ${token}`,
             'accept': 'application/json'
           }
         });
-        if (!hackathonsResponse.ok) throw new Error('Failed to fetch hackathons');
-        const hackathons = await hackathonsResponse.json();
-
-        let allSubmissions = [];
-
-        for (const hackathon of hackathons) {
-          const submissionsResponse = await fetch(`/api/admin/hackathons/${hackathon._id}/submissions`, {
-            headers: {
-              'Authorization': `Bearer ${token}`
-            }
-          });
-          if (!submissionsResponse.ok) throw new Error(`Failed to fetch submissions for hackathon ${hackathon._id}`);
-          const data = await submissionsResponse.json();
-          allSubmissions = allSubmissions.concat(data.projectSubmissions);
+        if (!response.ok) throw new Error('Failed to fetch hackathons');
+        const data = await response.json();
+        setHackathons(data);
+        if (data.length > 0) {
+          setSelectedHackathon(data[0]._id);
         }
+      } catch (error) {
+        console.error('Error fetching hackathons:', error);
+        setError(error.message);
+      } finally {
+        setIsLoading(false);
+      }
+    };
 
-        const sortedSubmissions = allSubmissions.sort((a, b) => b.score - a.score);
-        setSubmissions(sortedSubmissions);
+    fetchHackathons();
+  }, [token]);
 
+  useEffect(() => {
+    const fetchLeaderboard = async () => {
+      if (!selectedHackathon) return;
+      
+      setIsLoading(true);
+      try {
+        const response = await fetch(`/api/users/hackathons/${selectedHackathon}/leaderboard`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'accept': 'application/json'
+          }
+        });
+        if (!response.ok) throw new Error('Failed to fetch leaderboard');
+        const data = await response.json();
+        setLeaderboard(data);
+
+        // Fetch current user data
         const currentUserResponse = await fetch(`/api/users/me`, {
           headers: {
             'Authorization': `Bearer ${token}`
@@ -45,123 +62,172 @@ const LeaderBoard = () => {
         });
         if (!currentUserResponse.ok) throw new Error('Failed to fetch current user');
         const currentUserData = await currentUserResponse.json();
-        const currentUserRank = sortedSubmissions.findIndex(submission => submission.user.userId === currentUserData.userId) + 1;
+        const currentUserRank = data.findIndex(entry => entry.userId === currentUserData.userId) + 1;
         setCurrentUser({ ...currentUserData, rank: currentUserRank });
 
       } catch (error) {
-        console.error('Error fetching submissions:', error);
+        console.error('Error fetching leaderboard:', error);
         setError(error.message);
       } finally {
         setIsLoading(false);
       }
     };
 
-    fetchAllSubmissions();
-  }, [token]);  
+    fetchLeaderboard();
+  }, [selectedHackathon, token]);
 
   const containerStyle = {
     background: 'rgba(0, 0, 0, 0.7)',
     color: 'white',
-    padding: '20px',
-    borderRadius: '10px',
-    width: '80%',
+    padding: '30px',
+    borderRadius: '15px',
+    width: '90%',
+    maxWidth: '1000px',
     margin: 'auto',
     marginTop: '50px',
-    
+    boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+  };
+
+  const hackathonSelectStyle = {
+    background: 'rgba(255, 255, 255, 0.1)',
+    border: '1px solid rgba(255, 255, 255, 0.3)',
+    borderRadius: '8px',
+    color: 'white',
+    padding: '12px 20px',
+    fontSize: '16px',
+    marginBottom: '30px',
+    width: '100%',
+    cursor: 'pointer',
+    transition: 'all 0.3s ease',
   };
 
   const profileHeaderStyle = {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: '20px',
+    marginBottom: '30px',
+    background: 'rgba(255, 255, 255, 0.1)',
+    padding: '20px',
+    borderRadius: '10px',
   };
 
   const profileInfoStyle = {
     flexGrow: 1,
-    marginLeft: '20px',
   };
 
   const rankingInfoStyle = {
     textAlign: 'right',
+    fontSize: '24px',
+    fontWeight: 'bold',
   };
 
   const leaderboardStyle = {
-    background: 'rgba(255, 255, 255, 0.1)',
-    padding: '10px',
+    background: 'rgba(255, 255, 255, 0.05)',
+    padding: '20px',
     borderRadius: '10px',
+    overflow: 'hidden',
   };
 
   const headerRowStyle = {
-    display: 'flex',
-    justifyContent: 'space-between',
-    padding: '10px 0',
-    borderBottom: '1px solid rgba(255, 255, 255, 0.2)',
+    display: 'grid',
+    gridTemplateColumns: '0.5fr 2fr 1fr 1fr',
+    padding: '15px 10px',
+    background: 'rgba(255, 255, 255, 0.1)',
+    fontWeight: 'bold',
+    borderTopLeftRadius: '8px',
+    borderTopRightRadius: '8px',
   };
 
   const rowStyle = {
-    display: 'flex',
-    justifyContent: 'space-between',
-    padding: '10px 0',
+    display: 'grid',
+    gridTemplateColumns: '0.5fr 2fr 1fr 1fr',
+    padding: '12px 10px',
     borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+    transition: 'background-color 0.3s ease',
   };
+
 
   const backButtonStyle = {
     textAlign: 'left',
-    marginTop: '20px',
+    marginTop: '30px',
   };
 
+
   const buttonStyle = {
-    background: 'none',
-    border: '1px solid white',
+    background: 'rgba(255, 255, 255, 0.1)',
+    border: '1px solid rgba(255, 255, 255, 0.3)',
     color: 'white',
     padding: '10px 20px',
     borderRadius: '5px',
     cursor: 'pointer',
+    transition: 'all 0.3s ease',
   };
+
 
   return (
     <>
       <Header />
-      <div style={{height: '100vh'}}>
-      <div style={containerStyle}>
-        {isLoading ? (
-          <p>Loading...</p>
-        ) : error ? (
-          <p style={{ color: 'red' }}>{error}</p>
-        ) : (
-          <>
-            <div style={profileHeaderStyle}>
-              <div style={profileInfoStyle}>
-                <h2>{currentUser.username}</h2>
-                <p>#{currentUser.userId}</p>
-              </div>
-              <div style={rankingInfoStyle}>
-                <p>Rank: {currentUser.rank}</p>
-              </div>
-            </div>
-            <div style={leaderboardStyle}>
-              <div style={headerRowStyle}>
-                <span>Rank</span>
-                <span>Username</span>
-                <span>User ID</span>
-                <span>Score</span>
-              </div>
-              {Array.isArray(submissions) && submissions.map((submission, index) => (
-                <div key={submission._id} style={rowStyle}>
-                  <span>{index + 1}</span>
-                  <span>{submission.user.username}</span>
-                  <span>{submission.user.userId}</span>
-                  <span>{submission.score}</span>
+      <div style={{minHeight: '100vh', paddingBottom: '50px'}}>
+        <div style={containerStyle}>
+          {isLoading ? (
+            <p>Loading...</p>
+          ) : error ? (
+            <p style={{ color: 'red' }}>{error}</p>
+          ) : (
+            <>
+              <select 
+                value={selectedHackathon} 
+                onChange={(e) => setSelectedHackathon(e.target.value)}
+                style={hackathonSelectStyle}
+              >
+                {hackathons.map(hackathon => (
+                  <option key={hackathon._id} value={hackathon._id}>
+                    {hackathon.title}
+                  </option>
+                ))}
+              </select>
+              <div style={profileHeaderStyle}>
+                <div style={profileInfoStyle}>
+                  <h2 style={{margin: '0 0 10px 0'}}>{currentUser.username}</h2>
                 </div>
-              ))}
-            </div>
-            <div style={backButtonStyle} >
-              <button style={buttonStyle} onClick={() => window.history.back()} aria-label="Go back">Back</button>
-            </div>
-          </>
-        )}
-      </div>
+                <div style={rankingInfoStyle}>
+                  <p style={{margin: '0'}}>Rank: {currentUser.rank || 'N/A'}</p>
+                </div>
+              </div>
+              <div style={leaderboardStyle}>
+                <div style={headerRowStyle}>
+                  <span>Rank</span>
+                  <span>Username</span>
+                  <span>Score</span>
+                </div>
+                {leaderboard.map((entry, index) => (
+                  <div 
+                    key={entry.userId} 
+                    style={{
+                      ...rowStyle,
+                      backgroundColor: entry.userId === currentUser.userId ? 'rgba(255, 255, 255, 0.1)' : 'transparent',
+                    }}
+                  >
+                    <span>{index + 1}</span>
+                    <span>{entry.username}</span>
+                    <span>{entry.totalScore}</span>
+                  </div>
+                ))}
+              </div>
+              <div style={backButtonStyle}>
+                <button 
+                  style={buttonStyle} 
+                  onClick={() => window.history.back()} 
+                  aria-label="Go back"
+                  onMouseOver={(e) => e.target.style.backgroundColor = 'rgba(255, 255, 255, 0.2)'}
+                  onMouseOut={(e) => e.target.style.backgroundColor = 'rgba(255, 255, 255, 0.1)'}
+                >
+                  Back
+                </button>
+              </div>
+            </>
+          )}
+        </div>
       </div>
       <Footer />
     </>
