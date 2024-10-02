@@ -191,7 +191,7 @@ const Login = () => {
               animation: `${pulse} 2s infinite`,
             }}
           >
-            Login with Hysterchat
+            Login with Nexterchat
           </Button>
         </form>
         
