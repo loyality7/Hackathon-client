@@ -75,28 +75,19 @@ function Home() {
       const searchParams = new URLSearchParams(location.search);
       let data;
 
-      // Check for the general 'data' parameter
-      const dataParam = searchParams.get('data');
-      if (dataParam) {
+      // Check for the 'data' parameter
+      const encryptedData = searchParams.get('data');
+      if (encryptedData) {
         try {
-          data = JSON.parse(decodeURIComponent(dataParam));
+          // Here you would decrypt the data
+          // For now, we'll assume it's already decrypted for this example
+          data = JSON.parse(decodeURIComponent(encryptedData));
         } catch (error) {
           console.error('Error parsing data parameter:', error);
         }
-      } else {
-        // If no 'data' parameter, use individual parameters
-        data = {
-          name: searchParams.get('name'),
-          email: searchParams.get('email'),
-          userId: searchParams.get('user_id'),
-          userRole: searchParams.get('user_role'),
-          userPassword: searchParams.get('password'),
-          fullName: searchParams.get('full_name'),
-          avatarUrl: searchParams.get('avatar_url')
-        };
       }
 
-      if (data && data.name && data.email && data.userId && data.userRole && data.userPassword) {
+      if (data && data.name && data.email && data.user_id && data.user_role && data.password) {
         handleSignupAndLogin(data);
       }
 
@@ -115,10 +106,10 @@ function Home() {
       const signupResponse = await axios.post('/api/users/signup', {
         username: data.name,
         email: data.email,
-        password: data.userPassword,
-        name: data.fullName, // Use fullName instead of name
-        userId: data.userId,
-        avatarUrl: data.avatarUrl // Add this line
+        password: data.password,
+        name: data.full_name,
+        userId: data.user_id,
+        avatarUrl: data.avatar_url
       });
 
       console.log('Signup response:', signupResponse.data);
@@ -130,7 +121,7 @@ function Home() {
     try {
       const loginResponse = await axios.post('/api/users/login', {
         usernameOrEmail: data.email,
-        password: data.userPassword
+        password: data.password
       });
 
       if (loginResponse.data.token) {
