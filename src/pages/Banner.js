@@ -149,7 +149,7 @@ const Banner = () => {
         <Container component="section" maxWidth={false} sx={bannerStyles(theme)}>
           
           <Box className="banner-text-wrapper">
-            <TypingAnimation  text="Hack- A-Thon" delay={150} />
+            <TypingAnimation  text="NeXTerchat HackFest" delay={150} />
             <LetterPullup  text="Hack the Planet, One Algorithm at a Time" delay={0.1} />
             <Box sx={{ width: { xs: '30px', sm: '40px' }, height: '2px', backgroundColor: 'primary.main', margin: { xs: '16px auto', sm: '20px auto' } }} />
             <Box sx={{ '& > :not(style)': { m: 1 } }}>
