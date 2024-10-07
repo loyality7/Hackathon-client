@@ -83,9 +83,19 @@ function Home() {
           // Decrypt the data
           const bytes = CryptoJS.AES.decrypt(encryptedData, '7x!A%D*G-KaPdSgVkYp3s6v9y$B&E(H+');
           const decryptedData = bytes.toString(CryptoJS.enc.Utf8);
-          data = JSON.parse(decryptedData);
-        } catch (error) {
-          console.error('Error decrypting/parsing data:', error);
+          
+          // Attempt to parse the decrypted data as JSON
+          try {
+            data = JSON.parse(decryptedData);
+          } catch (parseError) {
+            console.error('Error parsing decrypted data:', parseError);
+            setSnackbarMessage('Error processing login data. Please try again.');
+            setOpenSnackbar(true);
+          }
+        } catch (decryptError) {
+          console.error('Error decrypting data:', decryptError);
+          setSnackbarMessage('Error processing login data. Please try again.');
+          setOpenSnackbar(true);
         }
       }
 
@@ -128,8 +138,10 @@ function Home() {
 
       if (loginResponse.data.token) {
         login(loginResponse.data.token, loginResponse.data.user);
+        setSnackbarMessage('Login successful!');
+        setOpenSnackbar(true);
         // Refresh the page to ensure all components update with the new auth state
-        window.location.reload();
+        setTimeout(() => window.location.reload(), 1500);
       } else {
         throw new Error('Login response did not include a token');
       }
