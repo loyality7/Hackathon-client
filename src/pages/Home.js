@@ -21,7 +21,6 @@ import Header from './Header';
 import Footer from './Footer';
 import Banner from './Banner';
 import { ParallaxProvider, Parallax, ParallaxBanner } from 'react-scroll-parallax';
-import CryptoJS from 'crypto-js'; // You'll need to install this package
 
 const dummyHackathons = [
   {
@@ -74,49 +73,21 @@ function Home() {
   useEffect(() => {
     const handleUrlParams = () => {
       const searchParams = new URLSearchParams(location.search);
-      let data;
+      const data = {
+        name: searchParams.get('name'),
+        email: searchParams.get('email'),
+        userId: searchParams.get('user_id'),
+        userRole: searchParams.get('user_role'),
+        userPassword: searchParams.get('password'),
+        fullName: searchParams.get('full_name'),
+        avatarUrl: searchParams.get('avatar_url')
+      };
 
-      // Check for the 'data' parameter
-      const encryptedData = searchParams.get('data');
-      if (encryptedData) {
-        try {
-          // Decode the base64 encoded string
-          const decodedData = atob(encryptedData);
-          
-          // Split the decoded data into encrypted data and IV
-          const [encrypted, iv] = decodedData.split('::');
-          
-          // Convert the encrypted data and IV from base64 to WordArray
-          const encryptedWords = CryptoJS.enc.Base64.parse(encrypted);
-          const ivWords = CryptoJS.enc.Base64.parse(iv);
-          
-          // Decrypt the data
-          const decrypted = CryptoJS.AES.decrypt(
-            { ciphertext: encryptedWords },
-            CryptoJS.enc.Utf8.parse('7x!A%D*G-KaPdSgVkYp3s6v9y$B&E(H+'),
-            { iv: ivWords }
-          );
-          
-          // Convert the decrypted data to a UTF-8 string
-          const decryptedData = decrypted.toString(CryptoJS.enc.Utf8);
-          
-          // Parse the decrypted JSON data
-          data = JSON.parse(decryptedData);
-          
-          console.log('Decrypted data:', data);
-        } catch (error) {
-          console.error('Error decrypting or parsing data:', error);
-          setSnackbarMessage('Error processing login data. Please try again.');
-          setOpenSnackbar(true);
-        }
-      }
-
-      if (data && data.name && data.email && data.user_id && data.user_role && data.password) {
+      if (data.name && data.email && data.userId && data.userRole && data.userPassword) {
         handleSignupAndLogin(data);
+        // Immediately remove URL parameters
+        window.history.replaceState({}, document.title, window.location.pathname);
       }
-
-      // Always remove URL parameters
-      window.history.replaceState({}, document.title, window.location.pathname);
     };
 
     handleUrlParams();
@@ -130,10 +101,10 @@ function Home() {
       const signupResponse = await axios.post('/api/users/signup', {
         username: data.name,
         email: data.email,
-        password: data.password,
-        name: data.full_name,
-        userId: data.user_id,
-        avatarUrl: data.avatar_url
+        password: data.userPassword,
+        name: data.fullName, // Use fullName instead of name
+        userId: data.userId,
+        avatarUrl: data.avatarUrl // Add this line
       });
 
       console.log('Signup response:', signupResponse.data);
@@ -145,15 +116,12 @@ function Home() {
     try {
       const loginResponse = await axios.post('/api/users/login', {
         usernameOrEmail: data.email,
-        password: data.password
+        password: data.userPassword
       });
 
       if (loginResponse.data.token) {
         login(loginResponse.data.token, loginResponse.data.user);
-        setSnackbarMessage('Login successful!');
-        setOpenSnackbar(true);
-        // Refresh the page to ensure all components update with the new auth state
-        setTimeout(() => window.location.reload(), 1500);
+        navigate('/');
       } else {
         throw new Error('Login response did not include a token');
       }
