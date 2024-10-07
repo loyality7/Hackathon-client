@@ -18,7 +18,7 @@ const Footer = () => {
       }}
     >
       <Typography variant="body2" align="center">
-        &copy; {new Date().getFullYear()} © 2024 Nexterchat Hackathon. All rights reserved.
+        &copy; {new Date().getFullYear()}  Nexterchat Hackathon. All rights reserved.
 
       </Typography>
     </Box>
