@@ -73,21 +73,35 @@ function Home() {
   useEffect(() => {
     const handleUrlParams = () => {
       const searchParams = new URLSearchParams(location.search);
-      const data = {
-        name: searchParams.get('name'),
-        email: searchParams.get('email'),
-        userId: searchParams.get('user_id'),
-        userRole: searchParams.get('user_role'),
-        userPassword: searchParams.get('password'),
-        fullName: searchParams.get('full_name'),
-        avatarUrl: searchParams.get('avatar_url')
-      };
+      let data;
 
-      if (data.name && data.email && data.userId && data.userRole && data.userPassword) {
-        handleSignupAndLogin(data);
-        // Immediately remove URL parameters
-        window.history.replaceState({}, document.title, window.location.pathname);
+      // Check for the general 'data' parameter
+      const dataParam = searchParams.get('data');
+      if (dataParam) {
+        try {
+          data = JSON.parse(decodeURIComponent(dataParam));
+        } catch (error) {
+          console.error('Error parsing data parameter:', error);
+        }
+      } else {
+        // If no 'data' parameter, use individual parameters
+        data = {
+          name: searchParams.get('name'),
+          email: searchParams.get('email'),
+          userId: searchParams.get('user_id'),
+          userRole: searchParams.get('user_role'),
+          userPassword: searchParams.get('password'),
+          fullName: searchParams.get('full_name'),
+          avatarUrl: searchParams.get('avatar_url')
+        };
       }
+
+      if (data && data.name && data.email && data.userId && data.userRole && data.userPassword) {
+        handleSignupAndLogin(data);
+      }
+
+      // Always remove URL parameters
+      window.history.replaceState({}, document.title, window.location.pathname);
     };
 
     handleUrlParams();
