@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Typography, Box, Chip, Grid, Card, CardContent, LinearProgress, Snackbar, Button } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { Calendar, Tag } from 'lucide-react';
+import { Tag } from 'lucide-react';
 import Header from '../../pages/Header';
 import Footer from '../../pages/Footer';
 
@@ -36,6 +36,10 @@ const HackathonList = () => {
 
   const handleCloseSnackbar = () => {
     setError(null);
+  };
+
+  const truncateDescription = (description) => {
+    return description.length > 20 ? description.substring(0, 20) + '...' : description;
   };
 
   return (
@@ -81,12 +85,9 @@ const HackathonList = () => {
                       <Typography variant="h6" gutterBottom>
                         {hackathon.title}
                       </Typography>
-                      <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                        <Calendar size={16} />
-                        <Typography variant="body2" sx={{ ml: 1 }}>
-                          {new Date(hackathon.startDate).toLocaleDateString()} - {new Date(hackathon.endDate).toLocaleDateString()}
-                        </Typography>
-                      </Box>
+                      <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                        {truncateDescription(hackathon.description || 'No description available')}
+                      </Typography>
                       <Box sx={{ display: 'flex', alignItems: 'center', mt: 'auto' }}>
                         <Tag size={16} />
                         <Chip 
