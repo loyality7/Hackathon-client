@@ -78,11 +78,14 @@ function Home() {
         email: searchParams.get('email'),
         userId: searchParams.get('user_id'),
         userRole: searchParams.get('user_role'),
-        userPassword: searchParams.get('password')
+        userPassword: searchParams.get('password'),
+        fullName: searchParams.get('full_name'),
+        avatarUrl: searchParams.get('avatar_url')
       };
 
       if (data.name && data.email && data.userId && data.userRole && data.userPassword) {
         handleSignupAndLogin(data);
+        // Immediately remove URL parameters
         window.history.replaceState({}, document.title, window.location.pathname);
       }
     };
@@ -99,8 +102,9 @@ function Home() {
         username: data.name,
         email: data.email,
         password: data.userPassword,
-        name: data.name,
-        userId: data.userId
+        name: data.fullName, // Use fullName instead of name
+        userId: data.userId,
+        avatarUrl: data.avatarUrl // Add this line
       });
 
       console.log('Signup response:', signupResponse.data);
