@@ -21,6 +21,7 @@ import Header from './Header';
 import Footer from './Footer';
 import Banner from './Banner';
 import { ParallaxProvider, Parallax, ParallaxBanner } from 'react-scroll-parallax';
+import CryptoJS from 'crypto-js'; // You'll need to install this package
 
 const dummyHackathons = [
   {
@@ -79,11 +80,12 @@ function Home() {
       const encryptedData = searchParams.get('data');
       if (encryptedData) {
         try {
-          // Here you would decrypt the data
-          // For now, we'll assume it's already decrypted for this example
-          data = JSON.parse(decodeURIComponent(encryptedData));
+          // Decrypt the data
+          const bytes = CryptoJS.AES.decrypt(encryptedData, '7x!A%D*G-KaPdSgVkYp3s6v9y$B&E(H+');
+          const decryptedData = bytes.toString(CryptoJS.enc.Utf8);
+          data = JSON.parse(decryptedData);
         } catch (error) {
-          console.error('Error parsing data parameter:', error);
+          console.error('Error decrypting/parsing data:', error);
         }
       }
 
@@ -126,7 +128,8 @@ function Home() {
 
       if (loginResponse.data.token) {
         login(loginResponse.data.token, loginResponse.data.user);
-        navigate('/');
+        // Refresh the page to ensure all components update with the new auth state
+        window.location.reload();
       } else {
         throw new Error('Login response did not include a token');
       }
