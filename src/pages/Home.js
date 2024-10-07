@@ -80,20 +80,32 @@ function Home() {
       const encryptedData = searchParams.get('data');
       if (encryptedData) {
         try {
-          // Decrypt the data
-          const bytes = CryptoJS.AES.decrypt(encryptedData, '7x!A%D*G-KaPdSgVkYp3s6v9y$B&E(H+');
-          const decryptedData = bytes.toString(CryptoJS.enc.Utf8);
+          // Decode the base64 encoded string
+          const decodedData = atob(encryptedData);
           
-          // Attempt to parse the decrypted data as JSON
-          try {
-            data = JSON.parse(decryptedData);
-          } catch (parseError) {
-            console.error('Error parsing decrypted data:', parseError);
-            setSnackbarMessage('Error processing login data. Please try again.');
-            setOpenSnackbar(true);
-          }
-        } catch (decryptError) {
-          console.error('Error decrypting data:', decryptError);
+          // Split the decoded data into encrypted data and IV
+          const [encrypted, iv] = decodedData.split('::');
+          
+          // Convert the encrypted data and IV from base64 to WordArray
+          const encryptedWords = CryptoJS.enc.Base64.parse(encrypted);
+          const ivWords = CryptoJS.enc.Base64.parse(iv);
+          
+          // Decrypt the data
+          const decrypted = CryptoJS.AES.decrypt(
+            { ciphertext: encryptedWords },
+            CryptoJS.enc.Utf8.parse('7x!A%D*G-KaPdSgVkYp3s6v9y$B&E(H+'),
+            { iv: ivWords }
+          );
+          
+          // Convert the decrypted data to a UTF-8 string
+          const decryptedData = decrypted.toString(CryptoJS.enc.Utf8);
+          
+          // Parse the decrypted JSON data
+          data = JSON.parse(decryptedData);
+          
+          console.log('Decrypted data:', data);
+        } catch (error) {
+          console.error('Error decrypting or parsing data:', error);
           setSnackbarMessage('Error processing login data. Please try again.');
           setOpenSnackbar(true);
         }
