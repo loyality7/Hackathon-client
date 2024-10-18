@@ -50,7 +50,7 @@ const CodingChallengeSection = ({ hackathonId, challenges, onAllChallengesComple
     if (challenge) {
       setSelectedLanguage(challenge.languages[0] || '');
       setUserCode(challenge.languageImplementations[challenge.languages[0]]?.visibleCode || '');
-      console.log('Proctoring:', challenge.proctoring); // Add this line to log proctoring status
+      console.log('Proctoring:', challenge.proctoring); 
     }
   }, [challenge]);
 
