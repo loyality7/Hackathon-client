@@ -28,6 +28,7 @@ const HackathonManager = () => {
   const [editingHackathonId, setEditingHackathonId] = useState(null);
   const [editingMCQs, setEditingMCQs] = useState([]);
   const [editingCodingChallenges, setEditingCodingChallenges] = useState([]);
+  const [showCodingChallengeForm, setShowCodingChallengeForm] = useState(false);
 
   useEffect(() => {
     fetchHackathons();
@@ -119,6 +120,14 @@ const HackathonManager = () => {
       ...prev,
       codingChallenges: [...prev.codingChallenges, challenge]
     }));
+    setShowCodingChallengeForm(false);
+  };
+  
+  const handleRemoveCodingChallenge = (index) => {
+    setHackathon(prev => ({
+      ...prev,
+      codingChallenges: prev.codingChallenges.filter((_, i) => i !== index)
+    }));
   };
 
   const handleSubmit = async (e) => {
@@ -135,11 +144,8 @@ const HackathonManager = () => {
           mcq.options.every(option => option.trim() !== '') && 
           mcq.correctAnswers.length > 0
         ),
-        codingChallenges: hackathon.codingChallenges.map(({ id, ...challenge }) => ({
-          ...challenge,
-          constraints: challenge.constraints || '' // Ensure constraints is always present
-        }))
       };
+
       console.log('Sending hackathon data:', JSON.stringify(hackathonData, null, 2));
       
       const url = editingHackathonId 
@@ -160,7 +166,24 @@ const HackathonManager = () => {
       if (response.ok) {
         const result = await response.json();
         console.log(editingHackathonId ? 'Hackathon updated successfully:' : 'Hackathon created successfully:', result);
-        
+
+        if (hackathon.codingChallenges.length > 0) {
+          const challengePromises = hackathon.codingChallenges.map(challenge => 
+            fetch(`http://localhost:5000/api/admin/coding-challenges`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+              },
+              body: JSON.stringify({
+                ...challenge,
+                hackathon: result._id 
+              }),
+            })
+          );
+
+          await Promise.all(challengePromises);
+        }
         // Save MCQs separately
         if (hackathonData.mcqs && hackathonData.mcqs.length > 0) {
           const mcqResponse = await fetch('/api/admin/mcqs', {
@@ -363,15 +386,31 @@ const HackathonManager = () => {
               </Grid>
             </Grid>
           </form>
-
+          <Typography variant="h6" gutterBottom>Coding Challenges</Typography>
+          {hackathon.codingChallenges.map((challenge, index) => (
+            <div key={index}>
+              <Typography variant="subtitle1">{challenge.name}</Typography>
+              <Button onClick={() => handleRemoveCodingChallenge(index)}>Remove</Button>
+            </div>
+          ))}
+          <Button 
+            variant="contained" 
+            color="primary" 
+            onClick={() => setShowCodingChallengeForm(true)}
+            style={{ marginTop: '10px' }}
+          >
+            Add Coding Challenge
+          </Button>
           <MCQManager 
             onSubmit={handleMCQSubmit} 
             initialMCQs={editingHackathonId ? editingMCQs : []}
           />
-          <CodingChallengeManager 
-            onSubmit={handleCodingChallengeSubmit} 
-            initialChallenges={editingHackathonId ? editingCodingChallenges : []}
-          />
+          {showCodingChallengeForm && (
+            <CodingChallengeManager 
+              onSubmit={handleCodingChallengeSubmit} 
+              initialChallenges={editingHackathonId ? editingCodingChallenges : []}
+            />
+          )}
         </div>
       ) : (
         <TableContainer component={Paper}>
