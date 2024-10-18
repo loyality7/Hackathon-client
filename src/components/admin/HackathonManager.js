@@ -169,7 +169,7 @@ const HackathonManager = () => {
 
         if (hackathon.codingChallenges.length > 0) {
           const challengePromises = hackathon.codingChallenges.map(challenge => 
-            fetch(`http://localhost:5000/api/admin/coding-challenges`, {
+            fetch(`/api/admin/coding-challenges`, {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',
