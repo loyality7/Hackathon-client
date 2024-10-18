@@ -6,15 +6,15 @@ import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
 
 const languages = ['C', 'C++', 'Python', 'Java', 'JavaScript'];
 
-const CodingChallengeManager = ({ onSubmit, initialChallenges = [] }) => {
-  const [challenge, setChallenge] = useState({
+const CodingChallengeManager = ({ onSubmit, onCancel, initialChallenge = null }) => {
+  const [challenge, setChallenge] = useState(initialChallenge || {
     name: '',
-    constraints: '', // Ensure this field is initialized
+    constraints: '',
     languages: [],
     problemStatement: '',
     languageImplementations: {},
     testCases: [],
-    proctoring: false, // Add this field
+    proctoring: false,
   });
 
   useEffect(() => {
@@ -218,8 +218,11 @@ const CodingChallengeManager = ({ onSubmit, initialChallenges = [] }) => {
           label="Proctoring"
         />
         
-        <Button type="submit" variant="contained" color="primary">
-          Save Coding Challenge
+        <Button type="submit" variant="contained" color="primary" style={{ marginRight: '10px' }}>
+          Add Challenge
+        </Button>
+        <Button variant="contained" color="secondary" onClick={onCancel}>
+          Cancel
         </Button>
       </form>
     </div>
