@@ -1,4 +1,4 @@
- import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Typography, Button, Select, MenuItem, Paper, Box, IconButton, CircularProgress, useMediaQuery, useTheme } from '@mui/material';
 import AceEditor from 'react-ace';
 import FullscreenIcon from '@mui/icons-material/Fullscreen';
@@ -30,6 +30,7 @@ const CodingChallengeSection = ({ hackathonId, challenges, onAllChallengesComple
   const [userCode, setUserCode] = useState('');
   const [selectedLanguage, setSelectedLanguage] = useState('');
   const [testResults, setTestResults] = useState([]);
+  const [completedChallenges, setCompletedChallenges] = useState([]);
   const editorRef = useRef(null);
   const [showTestResults, setShowTestResults] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(true);
@@ -38,7 +39,6 @@ const CodingChallengeSection = ({ hackathonId, challenges, onAllChallengesComple
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const isTablet = useMediaQuery(theme.breakpoints.between('sm', 'md'));
   const [isExecuting, setIsExecuting] = useState(false);
-  const [score, setScore] = useState(0);
 
   useEffect(() => {
     if (challenges && challenges.length > 0) {
@@ -49,15 +49,14 @@ const CodingChallengeSection = ({ hackathonId, challenges, onAllChallengesComple
 
   useEffect(() => {
     if (challenge) {
-      setSelectedLanguage('');
-      setUserCode('');
+      setSelectedLanguage(challenge.languages[0] || '');
+      setUserCode(challenge.languageImplementations[challenge.languages[0]]?.visibleCode || '');
     }
   }, [challenge]);
 
   const handleLanguageChange = (event) => {
-    const newLanguage = event.target.value;
-    setSelectedLanguage(newLanguage);
-    setUserCode(challenge.languageImplementations[newLanguage]?.visibleCode || '');
+    setSelectedLanguage(event.target.value);
+    setUserCode(challenge.languageImplementations[event.target.value].visibleCode);
   };
 
   const handleCodeChange = (newCode) => {
@@ -72,7 +71,6 @@ const CodingChallengeSection = ({ hackathonId, challenges, onAllChallengesComple
     try {
       const newTestResults = [];
       const testCasesToRun = action === 'running' ? [challenge.testCases[0]] : challenge.testCases;
-      let challengeScore = 0;
 
       for (let i = 0; i < testCasesToRun.length; i++) {
         const testCase = testCasesToRun[i];
@@ -85,47 +83,23 @@ const CodingChallengeSection = ({ hackathonId, challenges, onAllChallengesComple
 
         console.log('Request Payload:', payload);
 
-        try {
-          const response = await axios.post('/api/users/test-judge0', payload);
-          console.log('Response Data:', response.data);
+        const response = await axios.post('/api/test-judge0', payload);
 
-          const result = {
-            input: testCase.input,
-            expectedOutput: testCase.expectedOutput,
-            actualOutput: response.data.stdout || '',
-            passed: (response.data.stdout || '').trim() === (testCase.expectedOutput || '').trim(),
-            time: response.data.time,
-            memory: response.data.memory,
-            status: 'completed'
-          };
-          newTestResults.push(result);
-        } catch (error) {
-          console.error('Error executing test case:', error);
-          const errorMessage = error.response?.data?.message || error.message || 'An error occurred while executing the code.';
-          newTestResults.push({
-            input: testCase.input,
-            expectedOutput: testCase.expectedOutput,
-            actualOutput: errorMessage,
-            passed: false,
-            time: 'N/A',
-            memory: 'N/A',
-            status: 'error'
-          });
-        }
+        console.log('Response Data:', response.data);
 
+        const result = {
+          input: testCase.input,
+          expectedOutput: testCase.expectedOutput,
+          actualOutput: response.data.stdout || '',
+          passed: (response.data.stdout || '').trim() === (testCase.expectedOutput || '').trim(),
+          time: response.data.time,
+          memory: response.data.memory,
+          status: 'completed'
+        };
+        newTestResults.push(result);
         // Update test results one by one
-        setTestResults(prevResults => [...prevResults, newTestResults[newTestResults.length - 1]]);
-
-        if (newTestResults[newTestResults.length - 1].passed) {
-          challengeScore += 1;
-        }
+        setTestResults(prevResults => [...prevResults, result]);
       }
-
-      if (challengeScore === challenge.testCases.length) {
-        challengeScore += 2; // Bonus points for passing all test cases
-      }
-
-      setScore(prevScore => prevScore + challengeScore);
 
       return newTestResults;
     } catch (error) {
@@ -146,8 +120,6 @@ const CodingChallengeSection = ({ hackathonId, challenges, onAllChallengesComple
         status: 'error'
       }]);
       throw error;
-      toast.error('An error occurred while executing the code. Please try again later.');
-      return [];
     } finally {
       setIsExecuting(false);
     }
@@ -159,24 +131,20 @@ const CodingChallengeSection = ({ hackathonId, challenges, onAllChallengesComple
 
   const handleSubmit = async () => {
     try {
+      setIsExecuting(true);
       // Run all test cases
-      await executeCode('submitting');
+      const results = await executeCode('submitting');
 
-      // Wait for all test cases to complete
-      while (runningTestCase !== null) {
-        await new Promise(resolve => setTimeout(resolve, 100));
-      }
-
-      // Check if all test cases passed (but we'll submit regardless)
-      const allTestsPassed = testResults.every(result => result.passed);
+      // Check if all test cases passed
+      const allTestsPassed = results.every(result => result.passed);
 
       console.log('Submitting for hackathon:', hackathonId);
 
       const submissionData = {
         code: userCode,
         language: selectedLanguage,
-        testResults: testResults,
-        passed: allTestsPassed // This will be true only if all tests passed
+        testResults: results,
+        passed: allTestsPassed
       };
 
       // Send submission data
@@ -189,11 +157,16 @@ const CodingChallengeSection = ({ hackathonId, challenges, onAllChallengesComple
       // Always show a success message for submission
       toast.success('Submission successful!');
 
-      // Move to the next challenge or complete all challenges
-      if (currentChallenge === challenges.length - 1) {
+      // Mark the current challenge as completed
+      setCompletedChallenges(prev => {
+        const newCompleted = [...prev, currentChallengeIndex];
+        console.log('Completed challenges:', newCompleted);
+        return newCompleted;
+      });
+
+      // Check if all challenges are completed
+      if (completedChallenges.length + 1 === challenges.length) {
         onAllChallengesCompleted(true);
-      } else {
-        setCurrentChallenge(prevChallenge => prevChallenge + 1);
       }
 
       // Optionally, you can still inform the user about the test results
@@ -202,8 +175,10 @@ const CodingChallengeSection = ({ hackathonId, challenges, onAllChallengesComple
       }
 
     } catch (error) {
-      console.error('Error submitting coding challenge:', error.response?.data || error.message);
+      console.error('Error submitting coding challenge:', error);
       toast.error('Error submitting coding challenge: ' + (error.response?.data?.message || error.message));
+    } finally {
+      setIsExecuting(false);
     }
   };
 
@@ -276,6 +251,7 @@ const CodingChallengeSection = ({ hackathonId, challenges, onAllChallengesComple
   };
 
   console.log('Current challenge index:', currentChallengeIndex);
+  console.log('Completed challenges:', completedChallenges);
 
   return (
     <Box sx={{ 
@@ -300,7 +276,7 @@ const CodingChallengeSection = ({ hackathonId, challenges, onAllChallengesComple
         <Button 
           variant="contained" 
           onClick={handleNextChallenge} 
-          disabled={currentChallengeIndex === challenges.length - 1}
+          disabled={currentChallengeIndex === challenges.length - 1 || !completedChallenges.includes(currentChallengeIndex)}
         >
           Next Challenge
         </Button>
@@ -372,13 +348,11 @@ const CodingChallengeSection = ({ hackathonId, challenges, onAllChallengesComple
             <Select
               value={selectedLanguage}
               onChange={handleLanguageChange}
-              displayEmpty
               sx={{ 
                 width: isMobile ? '100%' : 150, 
                 bgcolor: isDarkMode ? 'white' : '#f5f5f5' 
               }}
             >
-              <MenuItem value="" disabled>Select Language</MenuItem>
               {challenge && challenge.languages.map((lang) => (
                 <MenuItem key={lang} value={lang}>{lang}</MenuItem>
               ))}
@@ -496,7 +470,7 @@ const CodingChallengeSection = ({ hackathonId, challenges, onAllChallengesComple
       {/* Completion status */}
       <Box sx={{ mt: 2 }}>
         <Typography variant="body1">
-          Completed: {currentChallengeIndex + 1} / {challenges.length}
+          Completed: {completedChallenges.length} / {challenges.length}
         </Typography>
       </Box>
     </Box>
