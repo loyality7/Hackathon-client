@@ -116,6 +116,7 @@ const HackathonChallenge = () => {
   const [userStartDate, setUserStartDate] = useState(null);
   const [userProgress, setUserProgress] = useState(null);
   const [completedSteps, setCompletedSteps] = useState([]);
+  const [totalScore, setTotalScore] = useState(0);
 
   useEffect(() => {
     const fetchHackathonAndCheckRegistration = async () => {
@@ -247,11 +248,19 @@ const HackathonChallenge = () => {
         return (
           <Box sx={{ height: 'calc(100vh - 200px)' }}>
             {hackathon.codingChallenges && hackathon.codingChallenges.length > 0 ? (
-              <CodingChallengeSection 
-                hackathonId={hackathon._id} 
-                challenges={hackathon.codingChallenges} 
-                onAllChallengesCompleted={handleAllChallengesCompleted}
-              />
+              <>
+                <Typography variant="h6" gutterBottom>
+                  Total Coding Challenges: {hackathon.codingChallenges.length}
+                </Typography>
+                <Typography variant="h6" gutterBottom>
+                  Current Score: {totalScore}
+                </Typography>
+                <CodingChallengeSection 
+                  hackathonId={hackathon._id} 
+                  challenges={hackathon.codingChallenges} 
+                  onAllChallengesCompleted={handleAllChallengesCompleted}
+                />
+              </>
             ) : (
               <Typography>No coding challenges available for this hackathon.</Typography>
             )}
@@ -278,9 +287,10 @@ const HackathonChallenge = () => {
     setActiveStep((prevActiveStep) => prevActiveStep - 1);
   };
 
-  const handleAllChallengesCompleted = (completed) => {
+  const handleAllChallengesCompleted = (completed, score) => {
     setAllChallengesCompleted(completed);
     setCodingChallengesCompleted(completed);
+    setTotalScore(prevScore => prevScore + score);
   };
 
   const updateUserProgress = async (newStep, completedStep) => {
@@ -290,7 +300,11 @@ const HackathonChallenge = () => {
         updatedCompletedSteps.push(completedStep);
       }
       const response = await axios.post(`/api/hackathons/${id}/progress`, 
-        { currentStep: newStep, completedSteps: updatedCompletedSteps },
+        { 
+          currentStep: newStep, 
+          completedSteps: updatedCompletedSteps,
+          totalScore: totalScore
+        },
         { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } }
       );
       setUserProgress(response.data);
