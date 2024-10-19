@@ -49,14 +49,15 @@ const CodingChallengeSection = ({ hackathonId, challenges, onAllChallengesComple
 
   useEffect(() => {
     if (challenge) {
-      setSelectedLanguage(challenge.languages[0] || '');
-      setUserCode(challenge.languageImplementations[challenge.languages[0]]?.visibleCode || '');
+      setSelectedLanguage('');
+      setUserCode('');
     }
   }, [challenge]);
 
   const handleLanguageChange = (event) => {
-    setSelectedLanguage(event.target.value);
-    setUserCode(challenge.languageImplementations[event.target.value].visibleCode);
+    const newLanguage = event.target.value;
+    setSelectedLanguage(newLanguage);
+    setUserCode(challenge.languageImplementations[newLanguage]?.visibleCode || '');
   };
 
   const handleCodeChange = (newCode) => {
@@ -84,24 +85,38 @@ const CodingChallengeSection = ({ hackathonId, challenges, onAllChallengesComple
 
         console.log('Request Payload:', payload);
 
-        const response = await axios.post('/api/users/test-judge0', payload);
+        try {
+          const response = await axios.post('/api/users/test-judge0', payload);
+          console.log('Response Data:', response.data);
 
-        console.log('Response Data:', response.data);
+          const result = {
+            input: testCase.input,
+            expectedOutput: testCase.expectedOutput,
+            actualOutput: response.data.stdout || '',
+            passed: (response.data.stdout || '').trim() === (testCase.expectedOutput || '').trim(),
+            time: response.data.time,
+            memory: response.data.memory,
+            status: 'completed'
+          };
+          newTestResults.push(result);
+        } catch (error) {
+          console.error('Error executing test case:', error);
+          const errorMessage = error.response?.data?.message || error.message || 'An error occurred while executing the code.';
+          newTestResults.push({
+            input: testCase.input,
+            expectedOutput: testCase.expectedOutput,
+            actualOutput: errorMessage,
+            passed: false,
+            time: 'N/A',
+            memory: 'N/A',
+            status: 'error'
+          });
+        }
 
-        const result = {
-          input: testCase.input,
-          expectedOutput: testCase.expectedOutput,
-          actualOutput: response.data.stdout || '',
-          passed: (response.data.stdout || '').trim() === (testCase.expectedOutput || '').trim(),
-          time: response.data.time,
-          memory: response.data.memory,
-          status: 'completed'
-        };
-        newTestResults.push(result);
         // Update test results one by one
-        setTestResults(prevResults => [...prevResults, result]);
+        setTestResults(prevResults => [...prevResults, newTestResults[newTestResults.length - 1]]);
 
-        if (result.passed) {
+        if (newTestResults[newTestResults.length - 1].passed) {
           challengeScore += 1;
         }
       }
@@ -131,6 +146,8 @@ const CodingChallengeSection = ({ hackathonId, challenges, onAllChallengesComple
         status: 'error'
       }]);
       throw error;
+      toast.error('An error occurred while executing the code. Please try again later.');
+      return [];
     } finally {
       setIsExecuting(false);
     }
@@ -340,11 +357,13 @@ const CodingChallengeSection = ({ hackathonId, challenges, onAllChallengesComple
             <Select
               value={selectedLanguage}
               onChange={handleLanguageChange}
+              displayEmpty
               sx={{ 
                 width: isMobile ? '100%' : 150, 
                 bgcolor: isDarkMode ? 'white' : '#f5f5f5' 
               }}
             >
+              <MenuItem value="" disabled>Select Language</MenuItem>
               {challenge && challenge.languages.map((lang) => (
                 <MenuItem key={lang} value={lang}>{lang}</MenuItem>
               ))}
