@@ -172,11 +172,11 @@ const CodingChallengeSection = ({ hackathonId, challenges, onAllChallengesComple
         score: score
       };
 
-      const response = await axios.post(`/api/hackathons/${hackathonId}/submit-coding-challenge`, submissionData, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      });
+  const response = await axios.post(`/api/users/hackathons/${hackathonId}/submit-coding-challenge`, submissionData, {
+  headers: {
+    'Authorization': `Bearer ${localStorage.getItem('token')}`
+  }
+});
 
       toast.success('Submission successful!');
 
