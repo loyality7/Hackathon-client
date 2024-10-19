@@ -210,6 +210,7 @@ const CodingChallengeSection = ({ hackathonId, challenges, onAllChallengesComple
     }
   };
 
+
   if (challenges.length === 0) return <Typography>No coding challenges available for this hackathon.</Typography>;
 
   const toggleFullscreen = () => {
