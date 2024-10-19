@@ -186,7 +186,7 @@ const CodingChallengeSection = ({ hackathonId, challenges, onAllChallengesComple
     executeCode('running');
   };
 
-  const handleNextChallenge = () => {
+ const handleNextChallenge = () => {
     console.log('Next button clicked');
     if (currentChallengeIndex < challenges.length - 1) {
       setCurrentChallengeIndex(prev => {
