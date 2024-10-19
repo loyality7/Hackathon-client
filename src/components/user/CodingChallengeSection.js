@@ -159,36 +159,51 @@ const CodingChallengeSection = ({ hackathonId, challenges, onAllChallengesComple
 
   const handleSubmit = async () => {
     try {
-      setIsExecuting(true);
-      const results = await executeCode('submitting');
+      // Run all test cases
+      await executeCode('submitting');
 
-      const allTestsPassed = results.every(result => result.passed);
+      // Wait for all test cases to complete
+      while (runningTestCase !== null) {
+        await new Promise(resolve => setTimeout(resolve, 100));
+      }
+
+      // Check if all test cases passed (but we'll submit regardless)
+      const allTestsPassed = testResults.every(result => result.passed);
+
+      console.log('Submitting for hackathon:', hackathonId);
 
       const submissionData = {
         code: userCode,
         language: selectedLanguage,
-        testResults: results,
-        passed: allTestsPassed,
-        score: score
+        testResults: testResults,
+        passed: allTestsPassed // This will be true only if all tests passed
       };
 
+      // Send submission data
       const response = await axios.post(`/api/hackathons/${hackathonId}/submit-coding-challenge`, submissionData, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         }
       });
 
+      // Always show a success message for submission
       toast.success('Submission successful!');
 
+      // Move to the next challenge or complete all challenges
+      if (currentChallenge === challenges.length - 1) {
+        onAllChallengesCompleted(true);
+      } else {
+        setCurrentChallenge(prevChallenge => prevChallenge + 1);
+      }
+
+      // Optionally, you can still inform the user about the test results
       if (!allTestsPassed) {
         toast.info('Note: Not all test cases passed. Your submission has been recorded.');
       }
 
     } catch (error) {
-      console.error('Error submitting coding challenge:', error);
+      console.error('Error submitting coding challenge:', error.response?.data || error.message);
       toast.error('Error submitting coding challenge: ' + (error.response?.data?.message || error.message));
-    } finally {
-      setIsExecuting(false);
     }
   };
 
