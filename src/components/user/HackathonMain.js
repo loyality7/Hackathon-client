@@ -378,7 +378,6 @@ const HackathonChallenge = () => {
         <StyledButton
           variant="contained"
           onClick={handleNext}
-          disabled={activeStep === steps.length - 1 || (activeStep === 2 && !codingChallengesCompleted)}
           fullWidth={isMobile}
         >
           {activeStep === steps.length - 1 ? 'Finish' : 'Next'}
