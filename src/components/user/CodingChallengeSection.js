@@ -83,7 +83,7 @@ const CodingChallengeSection = ({ hackathonId, challenges, onAllChallengesComple
 
         console.log('Request Payload:', payload);
 
-        const response = await axios.post('/api/test-judge0', payload);
+        const response = await axios.post('/api/users/test-judge0', payload);
 
         console.log('Response Data:', response.data);
 
