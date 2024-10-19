@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { Typography, Button, Box, LinearProgress, Stepper, Step, StepLabel, Card, CardContent, Grid, Paper, Chip, Avatar } from '@mui/material';
 import { styled, keyframes } from '@mui/material/styles';
@@ -392,7 +392,7 @@ const HackathonChallenge = () => {
         <StyledButton
           variant="contained"
           onClick={handleNext}
-          disabled={activeStep === steps.length - 1 || (activeStep === 2 && !codingChallengesCompleted)}
+         
           fullWidth={isMobile}
         >
           {activeStep === steps.length - 1 ? 'Finish' : 'Next'}
