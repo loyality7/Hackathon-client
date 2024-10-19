@@ -199,6 +199,7 @@ const LeaderBoard = () => {
                   <span>Rank</span>
                   <span>Username</span>
                   <span>Score</span>
+                  <span>Coding Challenge Score</span>
                 </div>
                 {leaderboard.map((entry, index) => (
                   <div 
@@ -211,6 +212,7 @@ const LeaderBoard = () => {
                     <span>{index + 1}</span>
                     <span>{entry.username}</span>
                     <span>{entry.totalScore}</span>
+                    <span>{entry.codingChallengeScore}</span>
                   </div>
                 ))}
               </div>
