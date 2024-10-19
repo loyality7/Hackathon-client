@@ -1,4 +1,4 @@
- import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { Typography, Button, Box, LinearProgress, Stepper, Step, StepLabel, Card, CardContent, Grid, Paper, Chip, Avatar } from '@mui/material';
 import { styled, keyframes } from '@mui/material/styles';
@@ -116,7 +116,6 @@ const HackathonChallenge = () => {
   const [userStartDate, setUserStartDate] = useState(null);
   const [userProgress, setUserProgress] = useState(null);
   const [completedSteps, setCompletedSteps] = useState([]);
-  const [totalScore, setTotalScore] = useState(0);
 
   useEffect(() => {
     const fetchHackathonAndCheckRegistration = async () => {
@@ -248,19 +247,11 @@ const HackathonChallenge = () => {
         return (
           <Box sx={{ height: 'calc(100vh - 200px)' }}>
             {hackathon.codingChallenges && hackathon.codingChallenges.length > 0 ? (
-              <>
-                <Typography variant="h6" gutterBottom>
-                  Total Coding Challenges: {hackathon.codingChallenges.length}
-                </Typography>
-                <Typography variant="h6" gutterBottom>
-                  Current Score: {totalScore}
-                </Typography>
-                <CodingChallengeSection 
-                  hackathonId={hackathon._id} 
-                  challenges={hackathon.codingChallenges} 
-                  onAllChallengesCompleted={handleAllChallengesCompleted}
-                />
-              </>
+              <CodingChallengeSection 
+                hackathonId={hackathon._id} 
+                challenges={hackathon.codingChallenges} 
+                onAllChallengesCompleted={handleAllChallengesCompleted}
+              />
             ) : (
               <Typography>No coding challenges available for this hackathon.</Typography>
             )}
@@ -287,10 +278,9 @@ const HackathonChallenge = () => {
     setActiveStep((prevActiveStep) => prevActiveStep - 1);
   };
 
-  const handleAllChallengesCompleted = (completed, score) => {
+  const handleAllChallengesCompleted = (completed) => {
     setAllChallengesCompleted(completed);
     setCodingChallengesCompleted(completed);
-    setTotalScore(prevScore => prevScore + score);
   };
 
   const updateUserProgress = async (newStep, completedStep) => {
@@ -300,11 +290,7 @@ const HackathonChallenge = () => {
         updatedCompletedSteps.push(completedStep);
       }
       const response = await axios.post(`/api/hackathons/${id}/progress`, 
-        { 
-          currentStep: newStep, 
-          completedSteps: updatedCompletedSteps,
-          totalScore: totalScore
-        },
+        { currentStep: newStep, completedSteps: updatedCompletedSteps },
         { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } }
       );
       setUserProgress(response.data);
@@ -392,7 +378,7 @@ const HackathonChallenge = () => {
         <StyledButton
           variant="contained"
           onClick={handleNext}
-         
+          disabled={activeStep === steps.length - 1 || (activeStep === 2 && !codingChallengesCompleted)}
           fullWidth={isMobile}
         >
           {activeStep === steps.length - 1 ? 'Finish' : 'Next'}
