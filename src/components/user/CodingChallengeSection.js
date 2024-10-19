@@ -129,58 +129,53 @@ const CodingChallengeSection = ({ hackathonId, challenges, onAllChallengesComple
     setShowTestResults(!showTestResults);
   };
 
-  const handleSubmit = async () => {
-    try {
-      setIsExecuting(true);
-      // Run all test cases
-      const results = await executeCode('submitting');
+const handleSubmit = async () => {
+  try {
+    setIsExecuting(true);
+    // Run all test cases
+    const results = await executeCode('submitting');
 
-      // Check if all test cases passed
-      const allTestsPassed = results.every(result => result.passed);
+    // Check if all test cases passed
+    const allTestsPassed = results.every(result => result.passed);
 
-      console.log('Submitting for hackathon:', hackathonId);
+    console.log('Submitting for hackathon:', hackathonId);
 
-      const submissionData = {
-        code: userCode,
-        language: selectedLanguage,
-        testResults: results,
-        passed: allTestsPassed
-      };
+    const submissionData = {
+      code: userCode,
+      language: selectedLanguage,
+      testResults: results,
+      passed: allTestsPassed
+    };
 
-      // Send submission data
-      const response = await axios.post(`/api/hackathons/${hackathonId}/submit-coding-challenge`, submissionData, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      });
-
-      // Always show a success message for submission
-      toast.success('Submission successful!');
-
-      // Mark the current challenge as completed
-      setCompletedChallenges(prev => {
-        const newCompleted = [...prev, currentChallengeIndex];
-        console.log('Completed challenges:', newCompleted);
-        return newCompleted;
-      });
-
-      // Check if all challenges are completed
-      if (completedChallenges.length + 1 === challenges.length) {
-        onAllChallengesCompleted(true);
+    // Send submission data
+    await axios.post(`/api/hackathons/${hackathonId}/submit-coding-challenge`, submissionData, {
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('token')}`
       }
+    });
 
-      // Optionally, you can still inform the user about the test results
-      if (!allTestsPassed) {
-        toast.info('Note: Not all test cases passed. Your submission has been recorded.');
-      }
+  } catch (error) {
+    // Log the error for debugging purposes, but don't show it to the user
+    console.error('Error submitting coding challenge:', error);
+  } finally {
+    // Always show a success message, regardless of the actual outcome
+    toast.success('Submission successful!');
 
-    } catch (error) {
-      console.error('Error submitting coding challenge:', error);
-      toast.error('Error submitting coding challenge: ' + (error.response?.data?.message || error.message));
-    } finally {
-      setIsExecuting(false);
+    // Mark the current challenge as completed
+    setCompletedChallenges(prev => {
+      const newCompleted = [...prev, currentChallengeIndex];
+      console.log('Completed challenges:', newCompleted);
+      return newCompleted;
+    });
+
+    // Check if all challenges are completed
+    if (completedChallenges.length + 1 === challenges.length) {
+      onAllChallengesCompleted(true);
     }
-  };
+
+    setIsExecuting(false);
+  }
+};
 
   const handleRun = () => {
     executeCode('running');
