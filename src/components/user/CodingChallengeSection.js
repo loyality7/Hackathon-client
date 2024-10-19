@@ -78,22 +78,22 @@ const CodingChallengeSection = ({ hackathonId, challenges, onAllChallengesComple
         const payload = {
           language: selectedLanguage.toLowerCase(),
           code: userCode,
-          input: testCase.input
+          inputs: testCase.input
         };
 
         console.log('Request Payload:', payload);
 
-        const response = await axios.post('/api/users/test-judge0', payload);
+        const response = await axios.post('/api/execute-code', payload);
 
         console.log('Response Data:', response.data);
 
         const result = {
           input: testCase.input,
           expectedOutput: testCase.expectedOutput,
-          actualOutput: response.data.stdout || '',
-          passed: (response.data.stdout || '').trim() === (testCase.expectedOutput || '').trim(),
-          time: response.data.time,
-          memory: response.data.memory,
+          actualOutput: response.data.result || '',
+          passed: (response.data.result || '').trim() === (testCase.expectedOutput || '').trim(),
+          error: response.data.error,
+          requestId: response.data.requestId,
           status: 'completed'
         };
         newTestResults.push(result);
@@ -107,10 +107,7 @@ const CodingChallengeSection = ({ hackathonId, challenges, onAllChallengesComple
       console.error('Error details:', error.response?.data);
       let errorMessage = 'An error occurred while executing the code.';
       if (error.response && error.response.data) {
-        errorMessage = error.response.data.message || errorMessage;
-        if (error.response.data.details && error.response.data.details.error) {
-          errorMessage += '\n' + error.response.data.details.error;
-        }
+        errorMessage = error.response.data.error || errorMessage;
       }
       setTestResults([{
         input: 'N/A',
@@ -129,59 +126,59 @@ const CodingChallengeSection = ({ hackathonId, challenges, onAllChallengesComple
     setShowTestResults(!showTestResults);
   };
 
-const handleSubmit = async () => {
-  try {
-    setIsExecuting(true);
-    // Run all test cases
-    const results = await executeCode('submitting');
+  const handleSubmit = async () => {
+    try {
+      setIsExecuting(true);
+      // Run all test cases
+      const results = await executeCode('submitting');
 
-    // Check if all test cases passed
-    const allTestsPassed = results.every(result => result.passed);
+      // Check if all test cases passed
+      const allTestsPassed = results.every(result => result.passed);
 
-    console.log('Submitting for hackathon:', hackathonId);
+      console.log('Submitting for hackathon:', hackathonId);
 
-    const submissionData = {
-      code: userCode,
-      language: selectedLanguage,
-      testResults: results,
-      passed: allTestsPassed
-    };
+      const submissionData = {
+        code: userCode,
+        language: selectedLanguage,
+        testResults: results,
+        passed: allTestsPassed
+      };
 
-    // Send submission data
-    await axios.post(`/api/hackathons/${hackathonId}/submit-coding-challenge`, submissionData, {
-      headers: {
-        'Authorization': `Bearer ${localStorage.getItem('token')}`
+      // Send submission data
+      await axios.post(`/api/hackathons/${hackathonId}/submit-coding-challenge`, submissionData, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+
+    } catch (error) {
+      // Log the error for debugging purposes, but don't show it to the user
+      console.error('Error submitting coding challenge:', error);
+    } finally {
+      // Always show a success message, regardless of the actual outcome
+      toast.success('Submission successful!');
+
+      // Mark the current challenge as completed
+      setCompletedChallenges(prev => {
+        const newCompleted = [...prev, currentChallengeIndex];
+        console.log('Completed challenges:', newCompleted);
+        return newCompleted;
+      });
+
+      // Check if all challenges are completed
+      if (completedChallenges.length + 1 === challenges.length) {
+        onAllChallengesCompleted(true);
       }
-    });
 
-  } catch (error) {
-    // Log the error for debugging purposes, but don't show it to the user
-    console.error('Error submitting coding challenge:', error);
-  } finally {
-    // Always show a success message, regardless of the actual outcome
-    toast.success('Submission successful!');
-
-    // Mark the current challenge as completed
-    setCompletedChallenges(prev => {
-      const newCompleted = [...prev, currentChallengeIndex];
-      console.log('Completed challenges:', newCompleted);
-      return newCompleted;
-    });
-
-    // Check if all challenges are completed
-    if (completedChallenges.length + 1 === challenges.length) {
-      onAllChallengesCompleted(true);
+      setIsExecuting(false);
     }
-
-    setIsExecuting(false);
-  }
-};
+  };
 
   const handleRun = () => {
     executeCode('running');
   };
 
- const handleNextChallenge = () => {
+  const handleNextChallenge = () => {
     console.log('Next button clicked');
     if (currentChallengeIndex < challenges.length - 1) {
       setCurrentChallengeIndex(prev => {
@@ -204,7 +201,6 @@ const handleSubmit = async () => {
       setTestResults([]);
     }
   };
-
 
   if (challenges.length === 0) return <Typography>No coding challenges available for this hackathon.</Typography>;
 
@@ -446,8 +442,9 @@ const handleSubmit = async () => {
                         <Typography variant="body2">Input: {result.input}</Typography>
                         <Typography variant="body2">Expected: {result.expectedOutput}</Typography>
                         <Typography variant="body2">Actual: {result.actualOutput}</Typography>
-                        <Typography variant="body2">Time: {result.time} seconds</Typography>
-                        <Typography variant="body2">Memory: {result.memory} KB</Typography>
+                        {result.time && <Typography variant="body2">Time: {result.time} seconds</Typography>}
+                        {result.memory && <Typography variant="body2">Memory: {result.memory} KB</Typography>}
+                        {result.error && <Typography variant="body2" color="error">Error: {result.error}</Typography>}
                       </Box>
                     ))
                   ) : (
