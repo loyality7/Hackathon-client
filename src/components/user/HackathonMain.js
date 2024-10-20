@@ -232,15 +232,11 @@ const HackathonChallenge = () => {
       case 1:
         return (
           <Box sx={{ height: 'calc(100vh - 200px)' }}>
-            {completedSteps.includes(1) ? (
-              <Typography>You have already completed the MCQ section. Please proceed to the next step.</Typography>
-            ) : (
-              <MCQSection 
-                hackathonId={hackathon._id} 
-                mcqs={hackathon.mcqs} 
-                onComplete={() => updateUserProgress(activeStep, 1)}
-              />
-            )}
+            <MCQSection 
+              hackathonId={hackathon._id} 
+              mcqs={hackathon.mcqs} 
+              onComplete={() => updateUserProgress(activeStep, 1)}
+            />
           </Box>
         );
       case 2:
